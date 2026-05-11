@@ -4,28 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Strawberry Math</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React and ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel to compile the React code in browser -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- Web App Meta (Makes it look like a real app) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'DynaPuff', cursive; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
-        // [PASTE THE REACT CODE I PROVIDED HERE]
-        // (Note: In the HTML version, change "export default" to "const App = ...")
-        // and add: ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const { useState, useEffect, useRef } = React;
+        const { Check, ArrowRight, Star, Zap } = lucide;
+
+        const StrawberryMath = () => {
+            const [problem, setProblem] = useState({ a: 0, b: 0, op: '×', answer: 0 });
+            const [userInput, setUserInput] = useState('');
+            const [gameState, setGameState] = useState('playing');
+            const [score, setScore] = useState(0);
+            const inputRef = useRef(null);
+
+            const generateProblem = () => {
+                const isMultiplication = Math.random() > 0.5;
+                const a = Math.floor(Math.random() * 10) + 1;
+                const b = Math.floor(Math.random() * 10) + 1;
+                if (isMultiplication) {
+                    setProblem({ a, b, op: '×', answer: a * b });
+                } else {
+                    setProblem({ a: a * b, b: a, op: '÷', answer: b });
+                }
+                setUserInput('');
+                setGameState('playing');
+            };
+
+            useEffect(() => { generateProblem(); }, []);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (userInput === '') return;
+                if (parseInt(userInput) === problem.answer) {
+                    setGameState('correct');
+                    setScore(s => s + 1);
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FF4D6D', '#70E000'] });
+                } else {
+                    setGameState('wrong');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#FFF0F3]">
+                    <div className="mb-6 flex items-center gap-4 bg-white/80 px-6 py-2 rounded-full border-2 border-pink-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-[#C9184A] font-bold">
+                            <Star size={20} fill="#FF4D6D" color="#FF4D6D" />
+                            <span>Score: {score}</span>
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-md bg-white rounded-[40px] p-8 shadow-xl border-b-8 border-pink-100">
+                        <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8">
+                            <div className="flex items-center justify-center gap-4 text-6xl font-bold text-slate-800">
+                                <span className="text-[#FF4D6D]">{problem.a}</span>
+                                <span className="text-[#70E000]">{problem.op}</span>
+                                <span className="text-[#FF4D6D]">{problem.b}</span>
+                                <span className="text-slate-300">=</span>
+                            </div>
+
+                            <div className="w-full min-h-[160px] flex flex-col items-center justify-center">
+                                {gameState === 'playing' ? (
+                                    <div className="flex gap-2">
+                                        <input
+                                            ref={inputRef} autoFocus type="number" inputMode="numeric"
+                                            value={userInput} onChange={(e) => setUserInput(e.target.value)}
+                                            className="w-32 text-center text-5xl py-4 rounded-3xl border-4 border-pink-50 outline-none focus:border-[#FF4D6D]"
+                                            placeholder="?"
+                                        />
+                                        <button type="submit" className="bg-[#70E000] text-white p-4 rounded-2xl"><Check size={32}/></button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center animate-bounce">
+                                        <h2 className={`text-4xl font-black ${gameState === 'correct' ? 'text-[#70E000]' : 'text-blue-400'}`}>
+                                            {gameState === 'correct' ? 'Correct! 🍓' : 'Oops! 🥶'}
+                                        </h2>
+                                        {gameState === 'wrong' && <p className="text-slate-600">Answer was {problem.answer}</p>}
+                                        <button onClick={generateProblem} className="mt-4 bg-[#FF4D6D] text-white px-8 py-3 rounded-2xl flex items-center gap-2 mx-auto">
+                                            Next <ArrowRight />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                    {/* Mobile Keypad */}
+                    {gameState === 'playing' && (
+                        <div className="mt-6 grid grid-cols-5 gap-2 md:hidden">
+                            {[1,2,3,4,5,6,7,8,9,0].map(n => (
+                                <button key={n} onClick={() => setUserInput(v => v + n)} className="w-12 h-12 bg-white rounded-xl shadow-sm text-xl">{n}</button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<StrawberryMath />);
     </script>
 </body>
 </html>
